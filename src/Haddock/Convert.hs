@@ -19,9 +19,9 @@ module Haddock.Convert where
 
 import HsSyn
 import TcType ( tcSplitSigmaTy )
-import TypeRep
-import Type(isStrLitTy)
-import Kind ( splitKindFunTys, synTyConResKind, isKind )
+import TyCoRep
+import Type (isStrLitTy, splitFunTys )
+import Kind ( synTyConResKind )
 import Name
 import Var
 import Class
@@ -136,7 +136,7 @@ synifyTyCon coax tc
                                 = noLoc $ KindedTyVar (getName fakeTyVar) 
                                                       (synifyKindSig realKind)
                          in HsQTvs { hsq_kvs = []   -- No kind polymorphism
-                                   , hsq_tvs = zipWith mk_hs_tv (fst (splitKindFunTys (tyConKind tc)))
+                                   , hsq_tvs = zipWith mk_hs_tv (fst (splitFunTys (tyConKind tc)))
                                                                 alphaTyVars --a, b, c... which are unfortunately all kind *
                                    }
                             
@@ -363,6 +363,8 @@ synifyType s forallty@(ForAllTy _tv _ty) =
      in noLoc $
            HsForAllTy forallPlicitness sTvs sCtx sTau
 synifyType _ (LitTy t) = noLoc $ HsTyLit $ synifyTyLit t
+synifyType _ (CastTy {}) = error "synifyType: can't synify a casted type"
+synifyType _ (CoercionTy {}) = error "synifyType: can't synify a coercion"
 
 synifyTyLit :: TyLit -> HsTyLit
 synifyTyLit (NumTyLit n) = HsNumTy n
